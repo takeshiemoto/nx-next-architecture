@@ -1,28 +1,32 @@
 package main
 
 import (
+	"toh-echo/domain"
+	"toh-echo/infrastructure"
+
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"net/http"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+var (
+	db  *gorm.DB
+	err error
+	dsn = "host=localhost user=toh dbname=toh password=toh sslmode=disable"
 )
 
 func main() {
+	dbInit()
+	infrastructure.Init()
 	e := echo.New()
-
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-
-	// ルーティング
-	e.GET("/", index)
-
 	e.Logger.Fatal(e.Start(":1323"))
 }
 
-type Ping struct {
-	Status int `json:"status"`
-}
-
-func index(c echo.Context) error {
-	ping := Ping{Status: http.StatusOK}
-	return c.JSON(http.StatusOK, ping)
+func dbInit() {
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+	db.Migrator().CreateTable(domain.User{})
 }
